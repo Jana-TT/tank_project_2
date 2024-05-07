@@ -44,23 +44,29 @@ class TankDataResponse(BaseModel):
 
 TANKS_QUERY = """--sql 
     WITH last_known_values AS (
-        SELECT td.key_metric,
-        FIRST_VALUE(td.ts) OVER w as ts,
-        FIRST_VALUE(td.value) OVER w as value
+        SELECT 
+            td.key_metric,
+            FIRST_VALUE(td.ts) OVER w as ts,
+            FIRST_VALUE(td.value) OVER w as value
         FROM sdm_dba.timeseries_data td
         GROUP BY td.key_metric
         WINDOW w as (PARTITION BY td.key_metric ORDER BY td.ts DESC)
     )
     SELECT
-    dc.source_id,
-    dc.source_key,
-    dc.metric_nice_name,
-    dc.key_metric,
-    td.ts,
-    td.value
-    FROM sdm_dba.data_catalog dc
-    JOIN last_known_values td ON dc.key_metric = td.key_metric
-    WHERE metric_nice_name ~ :mah_regex
+        dc.source_id,
+        dc.source_key,
+        dc.metric_nice_name,
+        dc.key_metric,
+        td.ts,
+        td.value
+    FROM 
+        sdm_dba.data_catalog dc
+    JOIN 
+        last_known_values td ON dc.key_metric = td.key_metric
+    WHERE 
+        metric_nice_name ~ :mah_regex
+    GROUP BY 
+        dc.source_id, dc.source_key, dc.metric_nice_name, dc.key_metric, td.ts, td.value
 """
 
 async def fetch_tank_data(req: GetTanksReq):
