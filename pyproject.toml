@@ -14,7 +14,7 @@ python-dotenv = "^1.0.1"
 pydantic = "^2.6.4"
 httpx = "^0.27.0"
 ipykernel = "^6.29.4"
-async-db-polars = "^0.1.6"
+async-db-polars = {version = "^0.1.6", extras = ["pg"]}
 
 [tool.poetry.group.dev.dependencies]
 curlify2 = "^2.0.0"

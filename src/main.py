@@ -91,7 +91,7 @@ def read_root():
     return {"Hello": "Worldppp, weeeepooooo, why port fail?"}
 
 def main():
-    uvicorn.run("src.main:app", host="0.0.0.0", port=8080)
+    uvicorn.run("src.main:app", host="0.0.0.0", port=8000)
 
 if __name__ == "__main__":
     main()
