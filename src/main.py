@@ -52,7 +52,7 @@ TANKS_QUERY = """--sql
     FROM sdm_dba.data_catalog dc
     JOIN sdm_dba.timeseries_data td ON td.key_metric = dc.key_metric
     WHERE metric_nice_name ~ :mah_regex
-    GROUP BY dc.key_metric, dc.source_id, dc.source_key, dc.metric_nice_name
+    GROUP BY dc.key_metric, dc.source_id, dc.source_key, dc.metric_nice_name, td.ts
     WINDOW w as (PARTITION BY td.key_metric ORDER BY td.ts DESC)
 """
 
