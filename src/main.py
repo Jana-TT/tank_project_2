@@ -43,17 +43,23 @@ class TankDataResponse(BaseModel):
     tanks: list[TankData]
 
 TANKS_QUERY = """--sql 
-    SELECT dc.source_id, 
+    WITH last_known_values AS (
+        SELECT td.key_metric,
+        FIRST_VALUE(td.ts) OVER w as ts,
+        FIRST_VALUE(td.value) OVER w as value,
+        GROUP BY td.key_metric
+        WINDOW w as (PARTITION BY td.key_metric ORDER BY td.ts DESC)
+    )
+    SELECT
+    dc.source_id,
     dc.source_key,
     dc.metric_nice_name,
     dc.key_metric,
-    FIRST_VALUE(td.ts) OVER w as ts,
-    FIRST_VALUE(td.value) OVER w as value
+    td.ts,
+    td.value
     FROM sdm_dba.data_catalog dc
-    JOIN sdm_dba.timeseries_data td ON td.key_metric = dc.key_metric
+    JOIN last_known_values td
     WHERE metric_nice_name ~ :mah_regex
-    GROUP BY dc.key_metric, dc.source_id, dc.source_key, dc.metric_nice_name, td.ts
-    WINDOW w as (PARTITION BY td.key_metric ORDER BY td.ts DESC)
 """
 
 async def fetch_tank_data(req: GetTanksReq):
