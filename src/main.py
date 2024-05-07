@@ -3,7 +3,7 @@ from enum import Enum
 from pydantic import BaseModel, Field
 from fastapi import FastAPI
 import uvicorn
-from src.pool import PG, init
+from src.pool import close, init, db
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 async def lifespan(app: FastAPI):
     await init()
     yield
+    await close()
 
 
 app = FastAPI(lifespan=lifespan, debug=True)
@@ -75,7 +76,7 @@ async def fetch_tank_data(req: GetTanksReq):
     tank_metrics_str = "|".join(tank_metrics)
     mah_regex = f'^(ESD-)?({tank_types_str})Tank[0-9]*({tank_metrics_str})$'
 
-    df = await PG.fetch(TANKS_QUERY, mah_regex=mah_regex, primo_ids=req.primo_ids, tank_types=req.tank_types)
+    df = await db.fetch(TANKS_QUERY, mah_regex=mah_regex, primo_ids=req.primo_ids, tank_types=req.tank_types)
     if df is None:
         return []
     return df.to_dicts()
