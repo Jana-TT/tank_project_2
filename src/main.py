@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 async def lifespan(app: FastAPI):
     await init()
     yield
-    
+
 app = FastAPI(lifespan=lifespan, debug=True)
 
 app.add_middleware(
