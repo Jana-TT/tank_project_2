@@ -62,21 +62,18 @@ test = ["astroid (>=1,<2)", "astroid (>=2,<4)", "pytest"]
 
 [[package]]
 name = "async-db-polars"
-version = "0.1.6"
+version = "0.1.7"
 description = "High level DB abstraction that uses polars to represent tables in memory."
 optional = false
-python-versions = ">=3.12,<4.0"
+python-versions = "<4.0,>=3.12"
 files = [
-    {file = "async_db_polars-0.1.6-py3-none-any.whl", hash = "sha256:c3bff513747be80a54f1f5caacf5c49dfbf38dc06aeba6840ea69db27dcb2c68"},
-    {file = "async_db_polars-0.1.6.tar.gz", hash = "sha256:39b0b20f390374cf80e20aa58bbc3ffc44fbc9239f44e01a4e502086df1606fc"},
+    {file = "async_db_polars-0.1.7-py3-none-any.whl", hash = "sha256:983a6b6f1bf08d2f6a795236ea6ce2a50a3a6bd49fe97586a03d44d6df6d872d"},
+    {file = "async_db_polars-0.1.7.tar.gz", hash = "sha256:c71f79bc5f70dcf43c237447ba11f8ef18571c67a4dc19935209cab764ee1e30"},
 ]
 
 [package.dependencies]
-asyncpg = {version = ">=0.29.0,<0.30.0", optional = true, markers = "extra == \"pg\""}
+asyncpg = ">=0.29.0,<0.30.0"
 polars = ">=0.20.3,<0.21.0"
-
-[package.extras]
-pg = ["asyncpg (>=0.29.0,<0.30.0)"]
 
 [[package]]
 name = "asyncpg"
@@ -1147,4 +1144,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "dd7304f2d9c5bc2409a630819821199a995dad29394063cdfbc111ac5fe1652d"
+content-hash = "5d6ac102f8d512753707088e8df72c062769bc21de048d8dfcfc944e7b58d118"

@@ -16,4 +16,4 @@ async def init():
     return pool
 
 
-PG = PGDB()
+PG = PGDB(init)
