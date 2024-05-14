@@ -1,10 +1,16 @@
-from contextlib import asynccontextmanager
-from enum import Enum
-from pydantic import BaseModel, Field
-from fastapi import FastAPI
-import uvicorn
-from src.pool import PG
+
+from sys import float_repr_style
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from pydantic import BaseModel, Field
+from datetime import datetime
+from fastapi import FastAPI
+from typing import Optional
+from src.pool import PG
+from enum import Enum
+import polars as pl
+import uvicorn
+import uuid
 
 
 @asynccontextmanager
@@ -14,7 +20,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan, debug=True)
 
 app.add_middleware(
-    CORSMiddleware,
+    CORSMiddleware, 
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
@@ -25,9 +31,22 @@ class TankData(BaseModel):
     primo_id: str
     scada_id: str
     metric_nice_name: str 
-    unique_id: str
-    timestamp: str
+    unique_id: uuid.UUID
+    timestamp: datetime  
     value: float 
+
+class TankDataTransform(BaseModel):
+    primo_id: str
+    tank_type: str
+    tank_number: int
+    Level: float
+    Volume: float
+    InchesUntilAlarm: float
+    InchesToESD: float
+    TimeUntilESD: float
+    Capacity: float
+    ID: float
+
 
 class TankType(Enum):
     Oil = "Oil"
@@ -37,8 +56,11 @@ class GetTanksReq(BaseModel):
     tank_types: set[TankType] = Field(default={TankType.Oil, TankType.Water})
     primo_ids: set[str]
 
-class TankDataResponse(BaseModel):
-    tanks: list[TankData]
+#class TankDataResponse(BaseModel):
+    #tanks: list[TankData]
+
+class TankDataTransformResponse(BaseModel):
+    tanks: list[TankDataTransform]
 
 TANKS_QUERY = """--sql 
    WITH last_known_values AS ( 
@@ -50,36 +72,62 @@ SELECT
     dc.source_id AS primo_id,
     dc.source_key AS scada_id,
     dc.metric_nice_name,
-    dc.key_metric,
-    td.ts,
+    dc.key_metric AS unique_id,
+    td.ts AS timestamp,
     td.value
 FROM sdm_dba.data_catalog dc
 JOIN last_known_values td ON dc.key_metric = td.key_metric
 WHERE metric_nice_name ~ :the_regex AND dc.source_id = ANY(:primo_ids::VARCHAR[]) AND rnk = 1
 """
 
-tank_metrics = ["Level", "Volume-Current", "InchesUntilAlarm", "InchesToESD", "Interface", "Oil-Level", "Capacity", "ID"]
+tank_metrics = ["Level", "Volume", "InchesUntilAlarm", "InchesToESD", "TimeUntilESD", "Capacity", "ID"]
+tank_types_strs = [tank_type.value for tank_type in TankType] # Water, Oil as defined above 
+tank_types_str = "|".join(tank_types_strs) # Water|Oil
+tank_metrics_str = "|".join(tank_metrics) # Level|Volume-Current|InchesUntilAlarm|InchestoESD|Interface|Oil-Level|Capacity|ID
 
-async def fetch_tank_data(req: GetTanksReq):
-    tank_types_strs = [tank_type.value for tank_type in req.tank_types] # Water, Oil as defined above 
-    tank_types_str = "|".join(tank_types_strs) # Water|Oil
-    tank_metrics_str = "|".join(tank_metrics) # Level|Volume-Current|InchesUntilAlarm|InchestoESD|Interface|Oil-Level|Capacity|ID
+#fetching the data
+async def fetch_tank_data(req: GetTanksReq) -> Optional[pl.DataFrame]:
     the_regex = f'^(ESD-)?({tank_types_str})Tank[0-9]*({tank_metrics_str})$' 
     #Optional matches "ESD-", matches either (Water|Oil), matches the string literal 'Tank', [0-9]* matches zero or more digits, 
-    #matches one of these (Level|Volume-Current|InchesUntilAlarm|InchestoESD|Interface|Oil-Level|Capacity|ID)
+    #matches one of these (Level|Volume|InchesUntilAlarm|InchestoESD|TimeUntilESD|Capacity|ID)
     #$ the regex ends at the end of the string
 
     primo_ids_list = list(req.primo_ids)
 
     df = await PG.fetch(TANKS_QUERY, the_regex=the_regex, primo_ids=primo_ids_list)
+
+    return df #returning a DataFrame
+
+
+#transforming the data
+def transform_tank_data(df: Optional[pl.DataFrame]):
     if df is None:
         return []
-    return df.to_dicts()
+    
+    lf= df.lazy()
+    lf = lf.drop("unique_id")
+
+    pattern = f'^(?<is_ESD>ESD-)?(?<tank_type>{tank_types_str})Tank(?<tank_number>[0-9]*)(?<tank_metric>{tank_metrics_str})'
+    lf = lf.with_columns(separated_metrics = pl.col("metric_nice_name").str.extract_groups(pattern))
+    lf = lf.unnest("separated_metrics")
+    
+    lf = lf.with_columns(pl.col("tank_number").cast(pl.UInt8, strict=False))
+
+    values = pl.col("value")
+    columns = pl.col("tank_metric")
+    lf = lf.group_by("primo_id", "tank_type", "tank_number").agg(values.filter(columns == metric).first().alias(metric) for metric in tank_metrics)
+    lf = lf.with_columns(pl.all().fill_null(0))
+    
+    collect_data = lf.collect()
+    return collect_data.to_dicts()
+
      
-@app.post("/tanks", response_model=TankDataResponse)
+@app.post("/tanks")
 async def get_tank_data(req: GetTanksReq):
-    tanks = await fetch_tank_data(req)
-    return {"tanks": tanks}
+    fetch_tanks = await fetch_tank_data(req)
+    transform_tanks = transform_tank_data(fetch_tanks)
+    res = TankDataTransformResponse.model_validate({"tanks": transform_tanks})
+    return res
 
 @app.get("/")
 def read_root():

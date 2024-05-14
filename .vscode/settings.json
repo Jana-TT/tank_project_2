@@ -3,5 +3,8 @@
     "python.analysis.autoImportCompletions": true,
     "[yaml]": {
         "editor.tabSize": 4
-    }
+    },
+    "python.analysis.extraPaths": [
+        "./src"
+    ]
 }
