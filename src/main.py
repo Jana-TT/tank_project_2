@@ -54,7 +54,7 @@ class TankType(Enum):
 
 class GetTanksReq(BaseModel):
     tank_types: set[TankType] = Field(default={TankType.Oil, TankType.Water})
-    primo_ids: set[str]
+    primo_ids: set[str] = Field(default=["98743", "69419"])
 
 #class TankDataResponse(BaseModel):
     #tanks: list[TankData]
