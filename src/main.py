@@ -120,9 +120,10 @@ def transform_tank_data(df: Optional[pl.DataFrame]):
 
     values = pl.col("value")
     columns = pl.col("tank_metric")
-    lf = lf.group_by("primo_id", "tank_type", "tank_number").agg(values.filter(columns == metric).first().alias(metric) for metric in tank_metrics)
-    #lf = lf.with_columns(pl.all().fill_null(0))
-    
+    lf = lf.group_by("primo_id", "tank_type", "tank_number").agg(
+        **{metric: values.filter(columns == metric).first().alias(metric) for metric in tank_metrics}
+    )
+
     collect_data = lf.collect()
     return collect_data.to_dicts()
 
