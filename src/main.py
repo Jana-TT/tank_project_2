@@ -38,14 +38,14 @@ class TankData(BaseModel):
 class TankDataTransform(BaseModel):
     primo_id: str
     tank_type: str
-    tank_number: int
-    Level: float
-    Volume: float
-    InchesUntilAlarm: float
-    InchesToESD: float
-    TimeUntilESD: float
-    Capacity: float
-    ID: float
+    tank_number: Optional[int]
+    Level: Optional[float]
+    Volume: Optional[float]
+    InchesUntilAlarm: Optional[float]
+    InchesToESD: Optional[float]
+    TimeUntilESD: Optional[float]
+    Capacity: Optional[float]
+    ID: Optional[float]
 
 
 class TankType(Enum):
@@ -81,13 +81,18 @@ WHERE metric_nice_name ~ :the_regex AND dc.source_id = ANY(:primo_ids::VARCHAR[]
 """
 
 tank_metrics = ["Level", "Volume", "InchesUntilAlarm", "InchesToESD", "TimeUntilESD", "Capacity", "ID"]
+tank_metrics_str = "|".join(tank_metrics) # Level|Volume-Current|InchesUntilAlarm|InchestoESD|Interface|Oil-Level|Capacity|ID
 tank_types_strs = [tank_type.value for tank_type in TankType] # Water, Oil as defined above 
 tank_types_str = "|".join(tank_types_strs) # Water|Oil
-tank_metrics_str = "|".join(tank_metrics) # Level|Volume-Current|InchesUntilAlarm|InchestoESD|Interface|Oil-Level|Capacity|ID
+print(tank_types_str)
+
 
 #fetching the data
 async def fetch_tank_data(req: GetTanksReq) -> Optional[pl.DataFrame]:
-    the_regex = f'^(ESD-)?({tank_types_str})Tank[0-9]*({tank_metrics_str})$' 
+    tank_types_strs = [tank_type.value for tank_type in req.tank_types]
+    tank_types_str = "|".join(tank_types_strs)
+    print("pp", tank_types_str)
+    the_regex = f'^(ESD-)?({tank_types_str})Tank[0-9]*({tank_metrics_str})$'
     #Optional matches "ESD-", matches either (Water|Oil), matches the string literal 'Tank', [0-9]* matches zero or more digits, 
     #matches one of these (Level|Volume|InchesUntilAlarm|InchestoESD|TimeUntilESD|Capacity|ID)
     #$ the regex ends at the end of the string
@@ -116,7 +121,7 @@ def transform_tank_data(df: Optional[pl.DataFrame]):
     values = pl.col("value")
     columns = pl.col("tank_metric")
     lf = lf.group_by("primo_id", "tank_type", "tank_number").agg(values.filter(columns == metric).first().alias(metric) for metric in tank_metrics)
-    lf = lf.with_columns(pl.all().fill_null(0))
+    #lf = lf.with_columns(pl.all().fill_null(0))
     
     collect_data = lf.collect()
     return collect_data.to_dicts()
