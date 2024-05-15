@@ -93,7 +93,7 @@ async def fetch_tank_data(req: GetTanksReq) -> Optional[pl.DataFrame]:
     tank_types_str = "|".join(tank_types_strs)
     print("pp", tank_types_str)
     the_regex = f'^(ESD-)?({tank_types_str})Tank[0-9]*({tank_metrics_str})$'
-    #Optional matches "ESD-", matches either (Water|Oil), matches the string literal 'Tank', [0-9]* matches zero or more digits, 
+    #Optional matches "ESD-", matches either (Water|Oil), matches the string literal 'Tank', [0-9]* matches zero or clearmore digits, 
     #matches one of these (Level|Volume|InchesUntilAlarm|InchestoESD|TimeUntilESD|Capacity|ID)
     #$ the regex ends at the end of the string
 
