@@ -27,23 +27,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class TankData(BaseModel):
-    primo_id: str
-    scada_id: str
-    metric_nice_name: str 
-    unique_id: uuid.UUID
-    timestamp: datetime  
-    value: float 
-
 class TankDataTransform(BaseModel):
     primo_id: str
     tank_type: str
     tank_number: Optional[int]
     Level: Optional[float]
     Volume: Optional[float]
-    InchesUntilAlarm: Optional[float]
     InchesToESD: Optional[float]
-    TimeUntilESD: Optional[float]
     Capacity: Optional[float]
     ID: Optional[float]
 
@@ -52,15 +42,15 @@ class TankType(Enum):
     Oil = "Oil"
     Water = "Water"
 
+
 class GetTanksReq(BaseModel):
     tank_types: set[TankType] = Field(default={TankType.Oil, TankType.Water})
     primo_ids: set[str] = Field(default=["98743", "69419"])
 
-#class TankDataResponse(BaseModel):
-    #tanks: list[TankData]
 
 class TankDataTransformResponse(BaseModel):
     tanks: list[TankDataTransform]
+    
 
 TANKS_QUERY = """--sql 
    WITH last_known_values AS ( 
@@ -73,6 +63,7 @@ SELECT
     dc.source_key AS scada_id,
     dc.metric_nice_name,
     dc.key_metric AS unique_id,
+    dc.uom,
     td.ts AS timestamp,
     td.value
 FROM sdm_dba.data_catalog dc
@@ -84,14 +75,12 @@ tank_metrics = ["Level", "Volume", "InchesUntilAlarm", "InchesToESD", "TimeUntil
 tank_metrics_str = "|".join(tank_metrics) # Level|Volume-Current|InchesUntilAlarm|InchestoESD|Interface|Oil-Level|Capacity|ID
 tank_types_strs = [tank_type.value for tank_type in TankType] # Water, Oil as defined above 
 tank_types_str = "|".join(tank_types_strs) # Water|Oil
-print(tank_types_str)
 
 
 #fetching the data
 async def fetch_tank_data(req: GetTanksReq) -> Optional[pl.DataFrame]:
     tank_types_strs = [tank_type.value for tank_type in req.tank_types]
     tank_types_str = "|".join(tank_types_strs)
-    print("pp", tank_types_str)
     the_regex = f'^(ESD-)?({tank_types_str})Tank[0-9]*({tank_metrics_str})$'
     #Optional matches "ESD-", matches either (Water|Oil), matches the string literal 'Tank', [0-9]* matches zero or clearmore digits, 
     #matches one of these (Level|Volume|InchesUntilAlarm|InchestoESD|TimeUntilESD|Capacity|ID)
@@ -121,8 +110,12 @@ def transform_tank_data(df: Optional[pl.DataFrame]):
     values = pl.col("value")
     columns = pl.col("tank_metric")
     lf = lf.group_by("primo_id", "tank_type", "tank_number").agg(
-        **{metric: values.filter(columns == metric).first().alias(metric) for metric in tank_metrics}
+         values.filter(columns == metric).first().alias(metric) for metric in tank_metrics
     )
+
+    lf = lf.sort("primo_id", "tank_type", "tank_number")
+    lf = lf.with_columns(pl.col("InchesUntilAlarm").alias("InchesToESD"))
+    lf = lf.drop("InchesUntilAlarm")
 
     collect_data = lf.collect()
     return collect_data.to_dicts()
@@ -137,7 +130,7 @@ async def get_tank_data(req: GetTanksReq):
 
 @app.get("/")
 def read_root():
-    return {"Hello": "Worldppp, weeeepooooo, why port fail?"}
+    return {"The Tank Project"}
 
 def main():
     uvicorn.run("src.main:app", host="0.0.0.0", port=8000)
