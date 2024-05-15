@@ -1,5 +1,3 @@
-
-from sys import float_repr_style
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from pydantic import BaseModel, Field
@@ -10,7 +8,6 @@ from src.pool import PG
 from enum import Enum
 import polars as pl
 import uvicorn
-import uuid
 
 
 @asynccontextmanager
