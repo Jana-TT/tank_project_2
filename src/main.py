@@ -31,8 +31,8 @@ class TankDataTransform(BaseModel):
     Level: Optional[float]
     Volume: Optional[float]
     InchesToESD: Optional[float]
+    TimeUntilESD: Optional[float]
     Capacity: Optional[float]
-    ID: Optional[float]
 
 
 class TankType(Enum):
@@ -110,11 +110,35 @@ def transform_tank_data(df: Optional[pl.DataFrame]):
          values.filter(columns == metric).first().alias(metric) for metric in tank_metrics
     )
 
-    lf = lf.sort("primo_id", "tank_type", "tank_number")
-    lf = lf.with_columns(pl.col("InchesUntilAlarm").alias("InchesToESD"))
-    lf = lf.drop("InchesUntilAlarm")
+    null_condition = pl.col("tank_number").is_null()
+    not_null_condition = pl.col("tank_number").is_not_null()
 
-    collect_data = lf.collect()
+    null_tanks = lf.filter(null_condition)
+    numbered_tanks = lf.filter(not_null_condition)
+
+    null_tanks = null_tanks.with_columns(pl.col("ID").alias("tank_number"))
+    null_tanks = null_tanks.drop("ID")
+    null_tanks = null_tanks.with_columns(pl.col("tank_number").cast(pl.UInt8, strict=False))
+
+    joined_lf = numbered_tanks.join(null_tanks, on=["primo_id", "tank_type", "tank_number"], how="left")
+
+    joined_lf = joined_lf.with_columns(
+    pl.col("primo_id"),
+    pl.col("tank_type"),
+    pl.col("tank_number"),
+    pl.coalesce(pl.col("Level"), pl.col("Level_right")).alias("Level"),
+    pl.coalesce(pl.col("Volume"), pl.col("Volume_right")).alias("Volume"),
+    pl.coalesce(pl.col("InchesToESD"), pl.col("InchesUntilAlarm_right")).alias("InchesToESD"),
+    pl.coalesce(pl.col("TimeUntilESD"), pl.col("TimeUntilESD_right")).alias("TimeUntilESD"),
+    pl.coalesce(pl.col("Capacity"), pl.col("Capacity_right")).alias("Capacity")
+)
+
+    joined_lf = joined_lf.drop("Level_right", "Volume_right", "InchesUntilAlarm_right", "InchesToESD_right", "TimeUntilESD_right", "Capacity_right")
+    joined_lf = joined_lf.drop("InchesUntilAlarm")
+
+    joined_lf = joined_lf.sort("primo_id", "tank_type", "tank_number")
+
+    collect_data = joined_lf.collect()
     return collect_data.to_dicts()
 
      
