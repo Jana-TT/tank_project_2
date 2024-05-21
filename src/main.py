@@ -62,9 +62,11 @@ SELECT
     dc.key_metric AS unique_id,
     dc.uom,
     td.ts AS timestamp,
-    td.value
+    td.value,
+    tm.tanksize AS tanksize
 FROM sdm_dba.data_catalog dc
 JOIN last_known_values td ON dc.key_metric = td.key_metric
+LEFT JOIN tank.tank_metadata tm ON tm.scadaid = dc.source_key
 WHERE metric_nice_name ~ :the_regex AND dc.source_id = ANY(:primo_ids::VARCHAR[]) AND rnk = 1
 """
 
