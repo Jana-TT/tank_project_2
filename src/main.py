@@ -33,6 +33,7 @@ class TankDataTransform(BaseModel):
     InchesToESD: Optional[float]
     TimeUntilESD: Optional[float]
     Capacity: Optional[float]
+    PercentFull: Optional[float]
 
 
 class TankType(Enum):
