@@ -29,7 +29,7 @@ class TankDataTransform(BaseModel):
     tank_type: str
     tank_number: Optional[int]
     Level: Optional[float]
-    Volume: Optional[float]
+    Volume: Optional[int]
     InchesToESD: Optional[float]
     TimeUntilESD: Optional[float]
     Capacity: float
@@ -142,8 +142,15 @@ def transform_tank_data(df: Optional[pl.DataFrame]):
     final_lf = final_lf.select(required_columns)
 
     final_lf = final_lf.sort("primo_id", "tank_type", "tank_number")
+
     percent_tank_full = (pl.col("Volume") / pl.col("Capacity") * 100).round().cast(pl.UInt8)
     final_lf = final_lf.with_columns(percent_tank_full.alias("percent_full"))
+
+    capacity_rounded = pl.col("Capacity").round()
+    final_lf = final_lf.with_columns(capacity_rounded.alias("Capacity"))
+
+    volume_to_feet = pl.col("Volume").round().cast(pl.UInt64)
+    final_lf = final_lf.with_columns(volume_to_feet.alias("Volume"))
 
     result = final_lf.collect()
     return result.to_dicts()
