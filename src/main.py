@@ -32,7 +32,7 @@ class TankDataTransform(BaseModel):
     Volume: Optional[float]
     InchesToESD: Optional[float]
     TimeUntilESD: Optional[float]
-    Capacity: Optional[float]
+    Capacity: float
     percent_full: int
 
 
