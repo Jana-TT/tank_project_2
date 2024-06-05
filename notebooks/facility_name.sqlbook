@@ -1,0 +1,3 @@
+-- SQLBook: Code
+SELECT mf.facility_name, mf.primo_prprty AS primo_id
+FROM mrte_dba.mrte_facility AS mf
