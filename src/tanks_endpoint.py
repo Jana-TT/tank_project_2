@@ -1,7 +1,7 @@
 import polars as pl
 from enum import Enum
 from src.pool import PG
-from typing import Optional
+from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 
@@ -75,7 +75,7 @@ async def fetch_tank_data(req: GetTanksReq) -> Optional[pl.DataFrame]:
 
 
 #transforming the data
-def transform_tank_data(df: Optional[pl.DataFrame]):
+def transform_tank_data(df: Optional[pl.DataFrame]) -> list[dict[str, Any]]:
     if df is None:
         return []
     
