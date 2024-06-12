@@ -6,7 +6,7 @@ import polars as pl
 
 
 class FacilitiesData(BaseModel):
-    primo_id: int
+    primo_id: str
     division_name: str
     division_id: int
     entity_type: str
@@ -44,6 +44,7 @@ def transform_facilities_data(df: Optional[pl.DataFrame]) -> list[dict[str, Any]
     lf = lf.drop("facility_name", "completion_name", "primo_prprty")
     lf = lf.unique(subset=["primo_id"])
     lf = lf.sort(pl.col("division_id"))
+    lf = lf.with_columns(pl.col("primo_id").cast(pl.String))
 
     result = lf.collect()
     return result.to_dicts()
