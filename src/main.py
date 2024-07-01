@@ -22,14 +22,14 @@ app.add_middleware(
 )
 
 @app.post("/tanks")
-async def get_tank_data(req: GetTanksReq):
+async def get_tank_data(req: GetTanksReq) -> TankDataTransformResponse:
     fetch_tanks = await fetch_tank_data(req)
     transform_tanks = transform_tank_data(fetch_tanks)
     res = TankDataTransformResponse.model_validate({"tanks": transform_tanks})
     return res
 
 @app.post("/facilities")
-async def get_facilities_data():
+async def get_facilities_data() -> FacilitiesResponse:
     fetch_facilities = await fetch_facilities_data()
     transform_facilites = transform_facilities_data(fetch_facilities)
     res_fac = FacilitiesResponse.model_validate({"facilities": transform_facilites}) 
