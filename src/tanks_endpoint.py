@@ -11,11 +11,11 @@ class TankDataTransform(BaseModel):
     primo_id: str
     tank_type: str
     tank_number: Optional[int]
-    Level: Optional[float]
-    Volume: Optional[int]
-    InchesToESD: Optional[float]
-    TimeUntilESD: Optional[float]
-    Capacity: float
+    level: Optional[float]
+    volume: Optional[int]
+    inches_to_esd: Optional[float]
+    time_until_esd: Optional[float]
+    capacity: float
     percent_full: int
 
 
