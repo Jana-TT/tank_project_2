@@ -12,6 +12,8 @@ class FacilitiesData(BaseModel):
     division_id: int
     entity_type: str
     entity_name: Optional[str]
+    route_name: str
+    foreman_name: str
 
 
 class FacilitiesResponse(BaseModel):

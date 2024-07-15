@@ -19,3 +19,4 @@ FROM generate_series(1, 1);
 INSERT INTO sdm_dba.data_catalog(source_key, source_id, metric_nice_name, uom, division_id)
 SELECT 
     
+-- SQLBook: Code
