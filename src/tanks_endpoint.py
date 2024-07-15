@@ -137,41 +137,41 @@ def transform_tank_data(df: Optional[pl.DataFrame]) -> list[dict[str, Any]]:
         pl.col("primo_id"),
         pl.col("tank_type"),
         pl.col("tank_number"),
-        pl.coalesce(pl.col("Level"), pl.col("Level_right")).alias("Level"),
-        pl.coalesce(pl.col("Volume"), pl.col("Volume_right")).alias("Volume"),
+        pl.coalesce(pl.col("Level"), pl.col("Level_right")).alias("level"),
+        pl.coalesce(pl.col("Volume"), pl.col("Volume_right")).alias("volume"),
         pl.coalesce(pl.col("InchesToESD"), pl.col("InchesUntilAlarm_right")).alias(
-            "InchesToESD"
+            "inches_to_esd"
         ),
         pl.coalesce(pl.col("TimeUntilESD"), pl.col("TimeUntilESD_right")).alias(
-            "TimeUntilESD"
+            "time_until_esd"
         ),
-        pl.coalesce(pl.col("Capacity"), pl.col("tanksize")).alias("Capacity"),
+        pl.coalesce(pl.col("Capacity"), pl.col("tanksize")).alias("capacity"),
     )
 
     required_columns = [
         "primo_id",
         "tank_type",
         "tank_number",
-        "Level",
-        "Volume",
-        "InchesToESD",
-        "TimeUntilESD",
-        "Capacity",
+        "level",
+        "volume",
+        "inches_to_esd",
+        "time_until_esd",
+        "capacity",
     ]
     final_lf = final_lf.select(required_columns)
 
     final_lf = final_lf.sort("primo_id", "tank_type", "tank_number")
 
     percent_tank_full = (
-        (pl.col("Volume") / pl.col("Capacity") * 100).round().cast(pl.UInt8)
+        (pl.col("volume") / pl.col("capacity") * 100).round().cast(pl.UInt8)
     )
     final_lf = final_lf.with_columns(percent_tank_full.alias("percent_full"))
 
-    capacity_rounded = pl.col("Capacity").round()
-    final_lf = final_lf.with_columns(capacity_rounded.alias("Capacity"))
+    capacity_rounded = pl.col("capacity").round()
+    final_lf = final_lf.with_columns(capacity_rounded.alias("capacity"))
 
-    volume_to_feet = pl.col("Volume").round().cast(pl.UInt64)
-    final_lf = final_lf.with_columns(volume_to_feet.alias("Volume"))
+    volume_to_feet = pl.col("volume").round().cast(pl.UInt64)
+    final_lf = final_lf.with_columns(volume_to_feet.alias("volume"))
 
     result = final_lf.collect()
     return result.to_dicts()
