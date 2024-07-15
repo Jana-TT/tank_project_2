@@ -1,0 +1,21 @@
+-- SQLBook: Code
+DROP TABLE mrte_dba.routes;
+CREATE TABLE mrte_dba.routes(
+    route_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    route_name VARCHAR(255),
+    foreman_name VARCHAR(255),
+    division_id INT, 
+    FOREIGN KEY (division_id) REFERENCES fdm_dba.fdm_division(division_id)
+)
+-- SQLBook: Code
+INSERT INTO mrte_dba.routes(route_name, foreman_name, division_id)
+SELECT 
+    'WEST TEXAS ROUTE' AS route_name,
+    'REYNOLDS, RYAN' AS foreman_name,
+    19 AS division_id
+FROM generate_series(1, 1);
+
+-- SQLBook: Code
+INSERT INTO sdm_dba.data_catalog(source_key, source_id, metric_nice_name, uom, division_id)
+SELECT 
+    

@@ -1,18 +1,24 @@
 import os
 
 import asyncpg
-from dotenv import load_dotenv
-
 from async_db_polars.pgdb import PGDB
+from dotenv import load_dotenv
 
 load_dotenv()
 DATABASE_PASSWORD = os.environ["DATABASE_PASSWORD"]
 
 
 async def init():
-    pool = await asyncpg.create_pool(user='postgres.zgrwyooxarbzhotcramx', password=DATABASE_PASSWORD, database='postgres', host='aws-0-us-east-1.pooler.supabase.com', port=5432)
+    pool = await asyncpg.create_pool(
+        user="janatt",
+        password=DATABASE_PASSWORD,
+        database="janadb",
+        host="postgres.wolfeydev.com",
+        port=5432,
+    )
     if pool is None:
         raise Exception("Could not connect to database")
     return pool
+
 
 PG = PGDB(init)
