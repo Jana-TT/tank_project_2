@@ -1,0 +1,82 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .
+      - uses: SebRollen/toml-action@v1.2.0
+        id: read_toml
+        with:
+          file: './pyproject.toml'
+          field: 'tool.poetry.version'
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}          
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            latest
+            ${{ steps.read_toml.outputs.value }}
+            type=sha
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .
+      - name: Read Version from pyproject.toml
+        uses: SebRollen/toml-action@v1.2.0
+        id: read_toml
+        with:
+          file: './pyproject.toml'
+          field: 'tool.poetry.version'
+      - name: downcase REPO
+        run: |
+          echo "REPO=${GITHUB_REPOSITORY@L}" >> "${GITHUB_ENV}"
+      - name: Send Deploy Webhook to Keel
+        uses: fjogeleit/http-request-action@v1
+        id: keel_req
+        with:
+          url: 'https://keel.wolfeydev.com/v1/webhooks/native'
+          method: 'POST'
+          data: '{"name": "${{ env.REGISTRY }}/${{ env.REPO }}", "tag": "${{ steps.read_toml.outputs.value }}"}'
+      - name: Show Response
+        run: |
+          echo ${{ steps.keel_req.outputs.response }}
+          echo ${{ steps.keel_req.outputs.headers }}
+          echo ${{ steps.keel_req.outputs.status }}
+          echo ${{ fromJson(steps.keel_req.outputs.response) }}
