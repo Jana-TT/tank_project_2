@@ -2,9 +2,7 @@ import os
 
 import asyncpg
 from async_db_polars.pgdb import PGDB
-from dotenv import load_dotenv
 
-load_dotenv()
 DATABASE_PASSWORD = os.environ["DATABASE_PASSWORD"]
 
 

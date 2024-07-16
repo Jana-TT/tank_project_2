@@ -4,6 +4,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+import src
 from src.facilities_endpoint import (
     FacilitiesResponse,
     fetch_facilities_data,
@@ -24,7 +25,7 @@ async def lifespan(app: FastAPI):
     await PG.close()
 
 
-app = FastAPI(lifespan=lifespan, debug=True)
+app = FastAPI(lifespan=lifespan, debug=True, version=src.version)
 
 
 app.add_middleware(
