@@ -9,6 +9,7 @@ from src.facilities_endpoint import (
     fetch_facilities_data,
     transform_facilities_data,
 )
+from src.pool import PG
 from src.tanks_endpoint import (
     GetTanksReq,
     TankDataTransformResponse,
@@ -20,6 +21,7 @@ from src.tanks_endpoint import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
+    await PG.close()
 
 
 app = FastAPI(lifespan=lifespan, debug=True)
