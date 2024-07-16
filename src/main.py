@@ -3,7 +3,6 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pool import PG
 
 from src.facilities_endpoint import (
     FacilitiesResponse,
@@ -21,7 +20,6 @@ from src.tanks_endpoint import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
-    await PG.close()
 
 
 app = FastAPI(lifespan=lifespan, debug=True)
@@ -63,3 +61,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+#  await PG.close()
