@@ -4,11 +4,12 @@ from typing import Any, Optional
 import polars as pl
 from pydantic import BaseModel, Field
 
+from src.constants import PROPERTY_ID
 from src.pool import PG
 
 
 class TankDataTransform(BaseModel):
-    primo_id: str
+    property_id: str
     tank_type: str
     tank_number: Optional[int]
     level: Optional[float]
@@ -26,21 +27,21 @@ class TankType(Enum):
 
 class GetTanksReq(BaseModel):
     tank_types: set[TankType] = Field(default={TankType.Oil, TankType.Water})
-    primo_ids: set[str] = Field(default=["98743", "69419"])
+    property_ids: set[str] = Field(default=["98743", "69419"])
 
 
 class TankDataTransformResponse(BaseModel):
     tanks: list[TankDataTransform]
 
 
-TANKS_QUERY = """--sql 
+TANKS_QUERY = f"""--sql 
    WITH last_known_values AS ( 
     SELECT *, 
     ROW_NUMBER() OVER (PARTITION BY td.key_metric ORDER BY td.ts DESC) AS rnk
     FROM sdm_dba.timeseries_data td   
 )
 SELECT
-    dc.source_id AS primo_id,
+    dc.source_id AS {PROPERTY_ID},
     dc.source_key AS scada_id,
     dc.metric_nice_name,
     dc.key_metric AS unique_id,
@@ -51,7 +52,7 @@ SELECT
 FROM sdm_dba.data_catalog dc
 JOIN last_known_values td ON dc.key_metric = td.key_metric
 LEFT JOIN tank.tank_metadata tm ON tm.scadaid = dc.source_key
-WHERE metric_nice_name ~ :the_regex AND dc.source_id = ANY(:primo_ids::VARCHAR[]) AND rnk = 1
+WHERE metric_nice_name ~ :the_regex AND dc.source_id = ANY(:property_ids::VARCHAR[]) AND rnk = 1
 """
 
 tank_metrics = [
@@ -81,9 +82,11 @@ async def fetch_tank_data(req: GetTanksReq) -> Optional[pl.DataFrame]:
     # matches one of these (Level|Volume|InchesUntilAlarm|InchestoESD|TimeUntilESD|Capacity|ID)
     # $ the regex ends at the end of the string
 
-    primo_ids_list = list(req.primo_ids)
+    property_ids_list = list(req.property_ids)
 
-    df = await PG.fetch(TANKS_QUERY, the_regex=the_regex, primo_ids=primo_ids_list)
+    df = await PG.fetch(
+        TANKS_QUERY, the_regex=the_regex, property_ids=property_ids_list
+    )
 
     return df  # returning a DataFrame
 
@@ -107,7 +110,7 @@ def transform_tank_data(df: Optional[pl.DataFrame]) -> list[dict[str, Any]]:
     # pivoting the data
     values = pl.col("value")
     columns = pl.col("tank_metric")
-    pivoted_lf = lf.group_by("primo_id", "tank_type", "tank_number", "scada_id").agg(
+    pivoted_lf = lf.group_by(PROPERTY_ID, "tank_type", "tank_number", "scada_id").agg(
         values.filter(columns == metric).first().alias(metric)
         for metric in tank_metrics
     )
@@ -125,16 +128,16 @@ def transform_tank_data(df: Optional[pl.DataFrame]) -> list[dict[str, Any]]:
     )
 
     joined_lf = numbered_tanks.join(
-        null_tanks, on=["primo_id", "tank_type", "tank_number"], how="left"
+        null_tanks, on=[PROPERTY_ID, "tank_type", "tank_number"], how="left"
     )
 
     final_lf = joined_lf.join(lf, on=["scada_id"], how="left")
-    final_lf = final_lf.group_by("primo_id", "tank_type", "tank_number").agg(
+    final_lf = final_lf.group_by(PROPERTY_ID, "tank_type", "tank_number").agg(
         pl.all().first()
     )
 
     final_lf = final_lf.with_columns(
-        pl.col("primo_id"),
+        pl.col(PROPERTY_ID),
         pl.col("tank_type"),
         pl.col("tank_number"),
         pl.coalesce(pl.col("Level"), pl.col("Level_right")).alias("level"),
@@ -149,7 +152,7 @@ def transform_tank_data(df: Optional[pl.DataFrame]) -> list[dict[str, Any]]:
     )
 
     required_columns = [
-        "primo_id",
+        PROPERTY_ID,
         "tank_type",
         "tank_number",
         "level",
@@ -160,7 +163,7 @@ def transform_tank_data(df: Optional[pl.DataFrame]) -> list[dict[str, Any]]:
     ]
     final_lf = final_lf.select(required_columns)
 
-    final_lf = final_lf.sort("primo_id", "tank_type", "tank_number")
+    final_lf = final_lf.sort(PROPERTY_ID, "tank_type", "tank_number")
 
     percent_tank_full = (
         (pl.col("volume") / pl.col("capacity") * 100).round().cast(pl.UInt8)
