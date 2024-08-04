@@ -1,5 +1,6 @@
-from typing import Any
+from typing import Any, Optional
 
+import polars as pl
 from pydantic import BaseModel
 
 from src.pool import PG
@@ -27,8 +28,12 @@ FACILITIES_QUERY = """--sql
 
 
 # fetching the data
-async def fetch_facilities_data() -> list[dict[str, Any]]:
+async def fetch_facilities_data() -> Optional[pl.DataFrame]:
     df_fac = await PG.fetch(FACILITIES_QUERY)
-    if df_fac is None:
+    return df_fac
+
+
+def transform_facilities_data(df: Optional[pl.DataFrame]) -> list[dict[str, Any]]:
+    if df is None:
         return []
-    return df_fac.to_dicts()
+    return df.to_dicts()
