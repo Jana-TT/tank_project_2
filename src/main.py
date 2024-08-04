@@ -5,11 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 import src
-from src.facilities_endpoint import (
-    FacilitiesResponse,
-    fetch_facilities_data,
-    transform_facilities_data,
-)
+from src.facilities_endpoint import FacilitiesResponse, fetch_facilities_data
 from src.pool import PG
 from src.tanks_endpoint import (
     GetTanksReq,
@@ -48,8 +44,7 @@ async def get_tank_data(req: GetTanksReq) -> TankDataTransformResponse:
 @app.post("/facilities")
 async def get_facilities_data() -> FacilitiesResponse:
     fetch_facilities = await fetch_facilities_data()
-    transform_facilites = transform_facilities_data(fetch_facilities)
-    res_fac = FacilitiesResponse.model_validate({"facilities": transform_facilites})
+    res_fac = FacilitiesResponse.model_validate({"facilities": fetch_facilities})
     return res_fac
 
 

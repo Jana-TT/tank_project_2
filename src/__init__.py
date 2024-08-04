@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 os.environ["TZ"] = "UTC"
-with open("pyproject.toml", "rb") as f:
+with open("/home/mushie/code/tank_project/pyproject.toml", "rb") as f:
     data = tomllib.load(f)
 
 poetry_info = data["tool"]["poetry"]
