@@ -37,4 +37,8 @@ async def fetch_facilities_data() -> Optional[pl.DataFrame]:
 def transform_facilities_data(df: Optional[pl.DataFrame]) -> list[dict[str, Any]]:
     if df is None:
         return []
-    return df.to_dicts()
+
+    lf = df.lazy()
+    lf = lf.with_columns(pl.col("property_id").cast(str))
+    result = lf.collect()
+    return result.to_dicts()
