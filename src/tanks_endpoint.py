@@ -12,8 +12,8 @@ class TankDataTransform(BaseModel):
     property_id: str
     tank_type: str
     tank_number: Optional[int]
-    level: Optional[float]
-    volume: Optional[int]
+    level: float
+    volume: int
     inches_to_esd: Optional[float]
     time_until_esd: Optional[float]
     capacity: float

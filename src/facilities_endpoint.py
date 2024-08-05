@@ -8,7 +8,7 @@ from src.pool import PG
 
 
 class FacilitiesData(BaseModel):
-    property_id: int
+    property_id: str
     division_name: str
     division_id: int
     facility_name: str

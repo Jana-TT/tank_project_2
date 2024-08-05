@@ -6,7 +6,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 os.environ["TZ"] = "UTC"
-with open("pyproject.toml", "rb") as f:
+
+file_path = os.path.join(os.path.dirname(__file__), "..", "pyproject.toml")
+file_path = os.path.abspath(file_path)
+
+with open(file_path, "rb") as f:
     data = tomllib.load(f)
 
 poetry_info = data["tool"]["poetry"]
