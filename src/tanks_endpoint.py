@@ -10,6 +10,7 @@ from src.pool import PG
 
 class TankDataTransform(BaseModel):
     property_id: str
+    scada_id: str
     tank_type: str
     tank_number: Optional[int]
     level: float
@@ -153,6 +154,7 @@ def transform_tank_data(df: Optional[pl.DataFrame]) -> list[dict[str, Any]]:
 
     required_columns = [
         PROPERTY_ID,
+        "scada_id",
         "tank_type",
         "tank_number",
         "level",

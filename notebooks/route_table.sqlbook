@@ -96,6 +96,18 @@ UPDATE mrte_dba.mrte_completion
 SET route_id = '1615a493-f1e4-4717-ba23-4de278a57ca1'
 WHERE division_id = 26
 -- SQLBook: Code
+UPDATE sdm_dba.data_catalog
+SET source_key = source_id || 'FAC'
+WHERE metric_nice_name = 'ESD-WaterTankID' AND source_key = 'FTW480001'
+-- SQLBook: Code
+SELECT *
+FROM sdm_dba.data_catalog
+WHERE source_key = 'FTW480001'
+-- SQLBook: Code
+SELECT *
+FROM sdm_dba.data_catalog
+WHERE source_id = '480001'
+-- SQLBook: Code
     SELECT *
     FROM mrte_dba.mrte_facility AS mf 
     FULL OUTER JOIN mrte_dba.mrte_completion AS mc ON mc.fac_primo_prprty = mf.primo_prprty
@@ -165,4 +177,10 @@ FROM mrte_dba.mrte_facility AS mf
 JOIN mrte_dba.routes AS rou ON rou.route_id = mf.route_id
 JOIN fdm_dba.fdm_division AS fd ON fd.division_id = mf.division_id
 -- SQLBook: Code
-SELECT
+SELECT *
+FROM sdm_dba.timeseries_data
+
+-- SQLBook: Code
+SELECT td.*, dc.source_key, dc.uom
+FROM sdm_dba.timeseries_data AS td
+JOIN sdm_dba.data_catalog AS dc ON td.key_metric = dc.key_metric

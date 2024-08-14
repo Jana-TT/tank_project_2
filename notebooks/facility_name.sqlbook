@@ -9,4 +9,13 @@ SELECT * FROM mrte_dba.routes
 -- SQLBook: Code
 SELECT * FROM sdm_dba.data_catalog WHERE source_id = '98761'
 -- SQLBook: Code
-SELECT * FROM sdm_dba.data_catalog
+SELECT *
+FROM sdm_dba.data_catalog AS dc
+JOIN sdm_dba.timeseries_data AS td ON td.key_metric = dc.key_metric
+-- SQLBook: Code
+SELECT *
+FROM sdm_dba.timeseries_data
+-- SQLBook: Code
+SELECT *
+FROM sdm_dba.timeseries_data AS td
+JOIN sdm_dba.data_catalog AS dc ON td.key_metric = dc.key_metric
