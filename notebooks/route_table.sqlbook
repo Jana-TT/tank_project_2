@@ -104,6 +104,11 @@ SELECT *
 FROM sdm_dba.data_catalog
 WHERE source_key = 'FTW480001'
 -- SQLBook: Code
+    SELECT td.*, dc.source_key AS scada_id, dc.uom, dc.source_id 
+    FROM sdm_dba.timeseries_data AS td
+    JOIN sdm_dba.data_catalog AS dc ON td.key_metric = dc.key_metric
+    WHERE dc.source_key = ANY(:scada_id::VARCHAR[])
+-- SQLBook: Code
 SELECT *
 FROM sdm_dba.data_catalog
 WHERE source_id = '480001'

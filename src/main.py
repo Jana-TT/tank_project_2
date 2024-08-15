@@ -11,6 +11,12 @@ from src.facilities_endpoint import (
     transform_facilities_data,
 )
 from src.pool import PG
+from src.tank_ts_endpoint import (
+    GetTanksTimeDataReq,
+    TankTsDataTransformResponse,
+    fetch_tank_ts_data,
+    transform_tank_ts_data,
+)
 from src.tanks_endpoint import (
     GetTanksReq,
     TankDataTransformResponse,
@@ -51,6 +57,16 @@ async def get_facilities_data() -> FacilitiesResponse:
     transform_facilites = transform_facilities_data(fetch_facilities)
     res_fac = FacilitiesResponse.model_validate({"facilities": transform_facilites})
     return res_fac
+
+
+@app.post("/tanks_timestamps")
+async def get_tank_ts_data(req: GetTanksTimeDataReq) -> TankTsDataTransformResponse:
+    fetch_tank_ts = await fetch_tank_ts_data(req)
+    transform_tanks_ts = transform_tank_ts_data(fetch_tank_ts)
+    res_tank_ts = TankTsDataTransformResponse.model_validate(
+        {"timeseries": transform_tanks_ts}
+    )
+    return res_tank_ts
 
 
 @app.get("/")
