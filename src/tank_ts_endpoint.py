@@ -44,7 +44,7 @@ def transform_tank_ts_data(df: Optional[pl.DataFrame]) -> list[dict[str, Any]]:
 
     lf = lf.drop("key_metric")
 
-    tank_metrics = ["Level", "Volume"]
+    tank_metrics = ["Level", "Volume", "InchesToESD"]
     tank_types = ["Water", "Oil"]
 
     tank_metrics_str = "|".join(tank_metrics)

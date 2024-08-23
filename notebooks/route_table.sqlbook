@@ -189,3 +189,40 @@ FROM sdm_dba.timeseries_data
 SELECT td.*, dc.source_key, dc.uom
 FROM sdm_dba.timeseries_data AS td
 JOIN sdm_dba.data_catalog AS dc ON td.key_metric = dc.key_metric
+-- SQLBook: Code
+DELETE sdm_dba.timeseries_data 
+FROM sdm_dba.data_catalog AS dc 
+JOIN sdm_dba.timeseries_data AS td ON td.key_metric = dc.key_metric
+WHERE dc.source_id NOT IN ('69419', '98750', '97843', '110009', '480001')
+
+-- SQLBook: Code
+SELECT *
+FROM sdm_dba.timeseries_data AS td 
+JOIN sdm_dba.data_catalog AS dc ON dc.key_metric = td.key_metric
+WHERE dc.source_id NOT IN ('69419', '98750', '97843', '110009', '480001')
+
+-- SQLBook: Code
+DELETE FROM tank.tank_metadata AS tm
+USING sdm_dba.data_catalog AS dc
+WHERE dc.key_metric = td.key_metric
+AND dc.source_id NOT IN ('69419', '98750', '97843', '110009', '480001');
+-- SQLBook: Code
+DELETE FROM tank.tank_metadata AS td
+FROM tank.tank_metadata AS tm
+JOIN sdm_dba.data_catalog AS dc ON dc.source_key = tm.scadaid
+WHERE dc.source_id IN ('69419', '98750', '97843', '110009', '480001');
+-- SQLBook: Code
+DELETE FROM tank.tank_metadata AS td
+USING sdm_dba.data_catalog AS dc
+WHERE dc.source_key = td.scadaid
+AND dc.source_id NOT IN ('69419', '98750', '97843', '110009', '480001');
+-- SQLBook: Code
+SELECT td.ts, td.value, dc.source_key AS scada_id, dc.metric_nice_name AS tank_name, dc.uom
+FROM sdm_dba.timeseries_data AS td
+JOIN sdm_dba.data_catalog AS dc ON td.key_metric = dc.key_metric
+WHERE dc.source_key = '9881904'
+
+-- SQLBook: Code
+SELECT *
+FROM sdm_dba.data_catalog AS dc
+JOIN sdm_dba.timeseries_data AS td ON td.key_metric = dc.key_metric
