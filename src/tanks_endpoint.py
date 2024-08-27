@@ -9,10 +9,11 @@ from src.pool import PG
 
 
 class TankDataTransform(BaseModel):
+    identifier: Optional[str]
     property_id: str
-    scada_id: str
+    source_key: str
     tank_type: str
-    tank_number: Optional[int]
+    tank_number: int
     level: float
     volume: int
     inches_to_esd: Optional[float]
@@ -28,7 +29,7 @@ class TankType(Enum):
 
 class GetTanksReq(BaseModel):
     tank_types: set[TankType] = Field(default={TankType.Oil, TankType.Water})
-    property_ids: set[str] = Field(default=["98743", "69419"])
+    property_ids: set[str] = Field(default=["69419", "98840"])
 
 
 class TankDataTransformResponse(BaseModel):
@@ -42,10 +43,10 @@ TANKS_QUERY = f"""--sql
     FROM sdm_dba.timeseries_data td   
 )
 SELECT
-    dc.source_id AS {PROPERTY_ID},
-    dc.source_key AS scada_id,
-    dc.metric_nice_name,
     dc.key_metric AS unique_id,
+    dc.source_id AS {PROPERTY_ID},
+    dc.source_key AS source_key,
+    dc.metric_nice_name AS tank_name,
     dc.uom,
     td.ts AS timestamp,
     td.value,
@@ -98,20 +99,35 @@ def transform_tank_data(df: Optional[pl.DataFrame]) -> list[dict[str, Any]]:
         return []
 
     lf = df.lazy()
-    lf = lf.drop("unique_id")
 
-    pattern = f"^(?<is_ESD>ESD-)?(?<tank_type>{tank_types_str})Tank(?<tank_number>[0-9]*)(?<tank_metric>{tank_metrics_str})"
+    tank_metrics = [
+        "Level",
+        "Volume",
+        "InchesUntilAlarm",
+        "InchesToESD",
+        "TimeUntilESD",
+        "Capacity",
+        "ID",
+    ]
+    tank_types = ["Water", "Oil"]
+
+    tank_metrics_str = "|".join(tank_metrics)
+    tank_types_str = "|".join(tank_types)
+
+    pattern = f"^(?<is_esd>ESD-)?(?<tank_type>{tank_types_str})Tank(?<tank_number>[0-9]*)(?<tank_metric>{tank_metrics_str})"
     lf = lf.with_columns(
-        separated_metrics=pl.col("metric_nice_name").str.extract_groups(pattern)
+        separated_metrics=pl.col("tank_name").str.extract_groups(pattern)
     )
+
     lf = lf.unnest("separated_metrics")
 
     lf = lf.with_columns(pl.col("tank_number").cast(pl.UInt8, strict=False))
 
-    # pivoting the data
     values = pl.col("value")
     columns = pl.col("tank_metric")
-    pivoted_lf = lf.group_by(PROPERTY_ID, "tank_type", "tank_number", "scada_id").agg(
+    pivoted_lf = lf.group_by(
+        PROPERTY_ID, "tank_type", "tank_number", "source_key", "unique_id"
+    ).agg(
         values.filter(columns == metric).first().alias(metric)
         for metric in tank_metrics
     )
@@ -128,16 +144,34 @@ def transform_tank_data(df: Optional[pl.DataFrame]) -> list[dict[str, Any]]:
         pl.col("tank_number").cast(pl.UInt8, strict=False)
     )
 
-    joined_lf = numbered_tanks.join(
-        null_tanks, on=[PROPERTY_ID, "tank_type", "tank_number"], how="left"
+    numbered_tanks = numbered_tanks.with_columns(
+        pl.col("unique_id").alias("identifier")
+    )
+    numbered_tanks = numbered_tanks.drop("unique_id")
+
+    null_tanks_merged = null_tanks.group_by(
+        [PROPERTY_ID, "tank_type", "source_key"]
+    ).agg(
+        [
+            pl.col("tank_number").max(),  # Use max or min to fill missing values
+            pl.col("unique_id").last(),  # Use first() or last() for string-like columns
+            pl.col("Level").max(),
+            pl.col("Volume").max(),
+            pl.col("InchesUntilAlarm").max(),
+            pl.col("InchesToESD").max(),
+            pl.col("TimeUntilESD").max(),
+            pl.col("Capacity").max(),
+        ]
     )
 
-    final_lf = joined_lf.join(lf, on=["scada_id"], how="left")
-    final_lf = final_lf.group_by(PROPERTY_ID, "tank_type", "tank_number").agg(
-        pl.all().first()
+    joined_lf = numbered_tanks.join(
+        null_tanks_merged, on=[PROPERTY_ID, "tank_type", "tank_number"], how="left"
     )
+
+    final_lf = joined_lf.join(lf, on=["source_key"], how="left")
 
     final_lf = final_lf.with_columns(
+        pl.col("unique_id").alias("identifier"),
         pl.col(PROPERTY_ID),
         pl.col("tank_type"),
         pl.col("tank_number"),
@@ -153,8 +187,9 @@ def transform_tank_data(df: Optional[pl.DataFrame]) -> list[dict[str, Any]]:
     )
 
     required_columns = [
+        "identifier",
         PROPERTY_ID,
-        "scada_id",
+        "source_key",
         "tank_type",
         "tank_number",
         "level",
@@ -176,7 +211,46 @@ def transform_tank_data(df: Optional[pl.DataFrame]) -> list[dict[str, Any]]:
     final_lf = final_lf.with_columns(capacity_rounded.alias("capacity"))
 
     volume_to_feet = pl.col("volume").round().cast(pl.UInt64)
+
     final_lf = final_lf.with_columns(volume_to_feet.alias("volume"))
 
-    result = final_lf.collect()
-    return result.to_dicts()
+    result = final_lf.group_by(
+        [PROPERTY_ID, "source_key", "tank_type", "tank_number"]
+    ).agg(
+        [
+            pl.col(
+                "identifier"
+            ).first(),  # Use first() or last() for non-numeric columns
+            pl.col("level").max(),  # Use max() to get the highest value (fill missing)
+            pl.col("volume").max(),
+            pl.col("inches_to_esd").max(),
+            pl.col("time_until_esd").max(),
+            pl.col("capacity").max(),
+            pl.col("percent_full").max(),
+        ]
+    )
+
+    result = result.sort(PROPERTY_ID, "tank_type", "tank_number")
+    result = result.select(
+        [
+            "identifier",
+            PROPERTY_ID,
+            "source_key",
+            "tank_type",
+            "tank_number",
+            "level",
+            "volume",
+            "inches_to_esd",
+            "time_until_esd",
+            "capacity",
+            "percent_full",
+        ]
+    )
+    result = result.with_columns(
+        pl.col("identifier")
+        .map_elements(lambda x: str(x) if x is not None else None, return_dtype=pl.Utf8)
+        .alias("identifier")
+    )
+
+    save_result = result.collect()
+    return save_result.to_dicts()

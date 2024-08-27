@@ -8,6 +8,7 @@ from src.pool import PG
 
 
 class TankTsDataTransform(BaseModel):
+    identifier: str
     tank_metric: str
     uom: str
     timestamps: List[datetime]
@@ -23,7 +24,7 @@ class TankTsDataTransformResponse(BaseModel):
 
 
 TANK_TS_QUERY = """--sql
-    SELECT td.ts, td.value, dc.source_key AS scada_id, dc.metric_nice_name AS tank_name, dc.uom
+    SELECT td.key_metric, td.ts, td.value, dc.source_key AS scada_id, dc.metric_nice_name AS tank_name, dc.uom
     FROM sdm_dba.timeseries_data AS td
     JOIN sdm_dba.data_catalog AS dc ON td.key_metric = dc.key_metric
     WHERE dc.source_key = :scada_id
