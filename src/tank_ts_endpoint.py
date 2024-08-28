@@ -15,7 +15,7 @@ class TankTsDataTransform(BaseModel):
 
 
 class GetTanksTimeDataReq(BaseModel):
-    scada_id: str = Field(default="6941901")
+    source_key: str = Field(default="6941901")
 
 
 class TankTsDataTransformResponse(BaseModel):
@@ -23,16 +23,16 @@ class TankTsDataTransformResponse(BaseModel):
 
 
 TANK_TS_QUERY = """--sql
-    SELECT td.ts, td.value, dc.source_key AS scada_id, dc.metric_nice_name AS tank_name, dc.uom
+    SELECT td.ts, td.value, dc.source_key AS source_key, dc.metric_nice_name AS tank_name, dc.uom
     FROM sdm_dba.timeseries_data AS td
     JOIN sdm_dba.data_catalog AS dc ON td.key_metric = dc.key_metric
-    WHERE dc.source_key = :scada_id
+    WHERE dc.source_key = :source_key
 """
 
 
 # fetching the data
 async def fetch_tank_ts_data(req: GetTanksTimeDataReq) -> Optional[pl.DataFrame]:
-    df = await PG.fetch(TANK_TS_QUERY, scada_id=req.scada_id)
+    df = await PG.fetch(TANK_TS_QUERY, source_key=req.source_key)
     return df
 
 
