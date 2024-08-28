@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tank-project"
-version = "0.1.15"
+version = "0.1.16"
 description = ""
 authors = ["Jana-TT <janatt2056@gmail.com>"]
 readme = "README.md"
