@@ -226,3 +226,54 @@ WHERE dc.source_key = '9881904'
 SELECT *
 FROM sdm_dba.data_catalog AS dc
 JOIN sdm_dba.timeseries_data AS td ON td.key_metric = dc.key_metric
+WHERE 
+-- SQLBook: Code
+SELECT * 
+FROM sdm_dba.data_catalog AS dc 
+WHERE dc.metric_nice_name NOT LIKE '%TankID%'
+  AND dc.metric_nice_name NOT LIKE '%TimeUntilESD%';
+
+-- SQLBook: Code
+SELECT * 
+FROM mrte_dba.mrte_facility
+WHERE primo_prprty = '110009'
+-- SQLBook: Code
+SELECT *
+FROM sdm_dba.data_catalog AS dc
+-- SQLBook: Code
+
+-- SQLBook: Code
+INSERT INTO sdm_dba.data_catalog (key_metric, source_key, source_id, metric_nice_name, division_id)
+VALUES ('adc57531-4dcf-4feb-be79-7b19c57b84f4', '69419FAC', '69419', 'ESD-OilTankID', 5)
+-- SQLBook: Code
+UPDATE sdm_dba.data_catalog 
+SET metric_nice_name = 'ESD-WaterTankInchesUntilAlarm'
+WHERE source_key = '69419FAC' AND metric_nice_name = 'WaterTank2InchesToESD'
+-- SQLBook: Code
+SELECT *
+FROM sdm_dba.timeseries_data_two
+-- SQLBook: Code
+SELECT COUNT(*) FROM sdm_dba.timeseries_data_two;
+
+-- SQLBook: Code
+SELECT *
+FROM tank.tank_metadata
+WHERE scadaid LIKE '%69419%'
+-- SQLBook: Code
+DELETE FROM sdm_dba.timeseries_data
+WHERE key_metric = '3ec25f10-df5b-433a-9aab-43c56d2a6057'
+-- SQLBook: Code
+DELETE FROM sdm_dba.data_catalog
+WHERE key_metric = '3ec25f10-df5b-433a-9aab-43c56d2a6057'
+-- SQLBook: Code
+COPY (SELECT * FROM sdm_dba.timeseries_data) TO STDOUT WITH (FORMAT csv, HEADER true);
+-- SQLBook: Code
+CREATE TABLE sdm_dba.timeseries_data_two (
+    key_metric UUID NOT NULL,
+    ts TIMESTAMP NOT NULL, 
+    value DOUBLE PRECISION NOT NULL
+);
+-- SQLBook: Code
+DELETE FROM sdm_dba.timeseries_data_two;
+-- SQLBook: Code
+DROP TABLE sdm_dba.timeseries_data_two;
