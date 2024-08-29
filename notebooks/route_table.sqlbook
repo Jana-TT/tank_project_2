@@ -240,13 +240,18 @@ WHERE primo_prprty = '110009'
 -- SQLBook: Code
 SELECT *
 FROM sdm_dba.data_catalog AS dc
+WHERE source_id = '11009'
 -- SQLBook: Code
 
 -- SQLBook: Code
 INSERT INTO sdm_dba.data_catalog (key_metric, source_key, source_id, metric_nice_name, division_id)
 VALUES ('adc57531-4dcf-4feb-be79-7b19c57b84f4', '69419FAC', '69419', 'ESD-OilTankID', 5)
 -- SQLBook: Code
-UPDATE sdm_dba.data_catalog 
+SELECT *
+FROM sdm_dba.timeseries_data_two 
+WHERE key_metric = '92ee60bc-576f-4288-8ac2-14d1755a18e2'
+-- SQLBook: Code
+UPDATE sdm_dba.timeseries_data_two 
 SET metric_nice_name = 'ESD-WaterTankInchesUntilAlarm'
 WHERE source_key = '69419FAC' AND metric_nice_name = 'WaterTank2InchesToESD'
 -- SQLBook: Code
@@ -258,7 +263,7 @@ SELECT COUNT(*) FROM sdm_dba.timeseries_data_two;
 -- SQLBook: Code
 SELECT *
 FROM tank.tank_metadata
-WHERE scadaid LIKE '%69419%'
+WHERE scadaid LIKE '%11009%'
 -- SQLBook: Code
 DELETE FROM sdm_dba.timeseries_data
 WHERE key_metric = '3ec25f10-df5b-433a-9aab-43c56d2a6057'
