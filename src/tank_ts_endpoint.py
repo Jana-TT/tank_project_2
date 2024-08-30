@@ -68,6 +68,8 @@ def transform_tank_ts_data(df: Optional[pl.DataFrame]) -> list[dict[str, Any]]:
         .alias("ts")
     )
 
+    ts_to_sec = ts_to_sec.sort("ts")
+
     aggregated_lf = ts_to_sec.group_by(["tank_metric", "tank_type", "uom"]).agg(
         [pl.col("ts").alias("timestamps"), pl.col("value").alias("values")]
     )
