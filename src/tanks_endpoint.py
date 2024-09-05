@@ -39,7 +39,7 @@ TANKS_QUERY = f"""--sql
    WITH last_known_values AS ( 
     SELECT *, 
     ROW_NUMBER() OVER (PARTITION BY td.key_metric ORDER BY td.ts DESC) AS rnk
-    FROM sdm_dba.timeseries_data_two td   
+    FROM timeseries_dba.timeseries_data_two td   
 )
 SELECT
     dc.key_metric AS unique_id,
@@ -50,7 +50,7 @@ SELECT
     td.ts AS timestamp,
     td.value,
     tm.tanksize AS tanksize
-FROM sdm_dba.data_catalog dc
+FROM timeseries_dba.data_catalog dc
 JOIN last_known_values td ON dc.key_metric = td.key_metric
 LEFT JOIN tank.tank_metadata tm ON tm.scadaid = dc.source_key
 WHERE metric_nice_name ~ :the_regex AND dc.source_id = ANY(:property_ids::VARCHAR[]) AND rnk = 1

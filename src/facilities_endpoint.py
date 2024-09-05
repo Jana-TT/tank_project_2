@@ -22,8 +22,8 @@ class FacilitiesResponse(BaseModel):
 
 FACILITIES_QUERY = f"""--sql
     SELECT mf.primo_prprty AS {PROPERTY_ID}, fd.division_name, mf.division_id, mf.facility_name, rou.route_name, rou.foreman_name
-    FROM mrte_dba.mrte_facility AS mf
-    JOIN mrte_dba.routes AS rou ON rou.route_id = mf.route_id
+    FROM properties_dba.mrte_facility AS mf
+    JOIN properties_dba.routes AS rou ON rou.route_id = mf.route_id
     JOIN fdm_dba.fdm_division AS fd ON fd.division_id = mf.division_id
 """
 

@@ -6,6 +6,8 @@ __pycache__/
 # C extensions
 *.so
 
+mrte_backup.sql
+
 # Distribution / packaging
 .Python
 build/
