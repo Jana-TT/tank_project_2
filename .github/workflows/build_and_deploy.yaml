@@ -1,9 +1,6 @@
 name: ci
 
-on:
-  push:
-    branches:
-      - main
+on: workflow_dispatch
 
 env:
   REGISTRY: ghcr.io
@@ -15,15 +12,10 @@ jobs:
     permissions:
       packages: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          sparse-checkout: .
-      - uses: SebRollen/toml-action@v1.2.0
-        id: read_toml
-        with:
-          file: './pyproject.toml'
-          field: 'tool.poetry.version'
+      - name: Get the Git tag
+        id: get_tag
+        run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -40,7 +32,7 @@ jobs:
           # generate Docker tags based on the following events/attributes
           tags: |
             latest
-            ${{ steps.read_toml.outputs.value }}
+            ${{ env.TAG }}
             type=sha
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -54,16 +46,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          sparse-checkout: .
-      - name: Read Version from pyproject.toml
-        uses: SebRollen/toml-action@v1.2.0
-        id: read_toml
-        with:
-          file: './pyproject.toml'
-          field: 'tool.poetry.version'
+      - name: Get the Git tag
+        id: get_tag
+        run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
       - name: downcase REPO
         run: |
           echo "REPO=${GITHUB_REPOSITORY@L}" >> "${GITHUB_ENV}"
@@ -73,7 +59,7 @@ jobs:
         with:
           url: 'https://keel.wolfeydev.com/v1/webhooks/native'
           method: 'POST'
-          data: '{"name": "${{ env.REGISTRY }}/${{ env.REPO }}", "tag": "${{ steps.read_toml.outputs.value }}"}'
+          data: '{"name": "${{ env.REGISTRY }}/${{ env.REPO }}", "tag": "${{ env.TAG }}"}'
       - name: Show Response
         run: |
           echo ${{ steps.keel_req.outputs.response }}
