@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tank-project"
-version = "0.1.25"
+version = "0.1.26"
 description = ""
 authors = ["Jana-TT <janatt2056@gmail.com>"]
 readme = "README.md"
@@ -16,6 +16,11 @@ httpx = "^0.27.0"
 ipykernel = "^6.29.4"
 async-db-polars = { version = "^0.1.7", extras = ["pg"] }
 perlin-noise = "^1.13"
+opentelemetry-api = "1.27.0"
+opentelemetry-sdk = "1.27.0"
+opentelemetry-instrumentation-fastapi = "0.48b0"
+opentelemetry-exporter-otlp = "1.27.0"
+opentelemetry-instrumentation = "0.48b0"
 
 [tool.poetry.group.dev.dependencies]
 curlify2 = "^2.0.0"

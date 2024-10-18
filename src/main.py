@@ -10,6 +10,10 @@ from src.facilities_endpoint import (
     fetch_facilities_data,
     transform_facilities_data,
 )
+from src.instrumentation import (
+    instrument_app,
+    setup_tracing,
+)
 from src.pool import PG
 from src.tank_ts_endpoint import (
     GetTanksTimeDataReq,
@@ -31,8 +35,11 @@ async def lifespan(app: FastAPI):
     await PG.close()
 
 
+setup_tracing()
+
 app = FastAPI(lifespan=lifespan, debug=True, version=src.version)
 
+instrument_app(app)
 
 app.add_middleware(
     CORSMiddleware,
