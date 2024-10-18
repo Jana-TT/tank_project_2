@@ -1,16 +1,25 @@
-FROM python:3.12.1-slim
+# An example using multi-stage image builds to create a final image without uv.
 
+# First, build the application in the `/app` directory.
+# See `Dockerfile` for details.
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 WORKDIR /app
+ADD . /app
+RUN uv sync --frozen --no-dev
 
 
-COPY ./src /app/src
-COPY ./pyproject.toml /app/pyproject.toml
-COPY ./poetry.lock /app/poetry.lock
+# Then, use a final image without uv
+FROM python:3.12-slim-bookworm
+# It is important to use the image that matches the builder, as the path to the
+# Python executable must be the same, e.g., using `python:3.11-slim-bookworm`
+# will fail.
+WORKDIR /app
+# Copy the application from the builder
+COPY --from=builder --chown=app:app /app /app
 
-ENV POETRY_VIRTUALENVS_IN_PROJECT=true
+# Place executables in the environment at the front of the path
+ENV PATH="/app/.venv/bin:$PATH"
 
-RUN pip install poetry
-RUN poetry install --only main --no-root -n
-
-EXPOSE 8000
-ENTRYPOINT [ "./.venv/bin/python", "-m", "src.main" ]
+# Run the FastAPI application by default
+CMD ["fastapi", "run"]
