@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tank-project"
-version = "0.1.27"
+version = "0.1.28"
 description = ""
 authors = ["Jana-TT <janatt2056@gmail.com>"]
 readme = "README.md"
@@ -21,6 +21,7 @@ opentelemetry-sdk = "1.27.0"
 opentelemetry-instrumentation-fastapi = "0.48b0"
 opentelemetry-exporter-otlp = "1.27.0"
 opentelemetry-instrumentation = "0.48b0"
+opentelemetry-instrumentation-asyncpg = "^0.48b0"
 
 [tool.poetry.group.dev.dependencies]
 curlify2 = "^2.0.0"
