@@ -24,7 +24,7 @@ class TankTsDataTransformResponse(BaseModel):
 
 
 TANK_TS_QUERY = """--sql
-    SELECT td.ts, td.value, dc.source_key AS source_key, dc.metric_nice_name, dc.uom
+    SELECT td.key_metric, td.ts, td.value, dc.source_key AS source_key, dc.metric_nice_name, dc.uom
     FROM timeseries_dba.timeseries_data_two AS td
     JOIN timeseries_dba.data_catalog AS dc ON td.key_metric = dc.key_metric
     WHERE dc.source_key = ANY(:source_key::VARCHAR[])
