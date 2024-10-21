@@ -8,4 +8,4 @@ os.environ["TZ"] = "UTC"
 
 
 PROJECT_NAME = "tanks-api"
-version = "0.1.31"  # make sure to change the version!
+version = "0.1.32"  # make sure to change the version!
