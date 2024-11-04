@@ -40,5 +40,6 @@ def transform_facilities_data(df: Optional[pl.DataFrame]) -> list[dict[str, Any]
 
     lf = df.lazy()
     lf = lf.with_columns(pl.col("property_id").cast(str))
+    lf = lf.sort("facility_name")
     result = lf.collect()
     return result.to_dicts()
